@@ -11,14 +11,16 @@ def get_connection():
 def init_db():
     conn = get_connection()
     cur = conn.cursor()
-    # 문서 테이블
+    # 문서 테이블 (chroma sync 관련 필드 추가)
     cur.execute(
         """
         CREATE TABLE IF NOT EXISTS documents (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
             content TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            sync_status TEXT DEFAULT 'not_synced',
+            sync_at TIMESTAMP
         )
     """
     )

@@ -16,6 +16,10 @@ services:
     volumes:
       - ./src:/app/src
       - ./tests:/app/tests
+    depends_on:
+      - chroma-db
+    networks:
+      - twinai-net
 
   slackbot:
     build:
@@ -30,3 +34,23 @@ services:
     depends_on:
       - api
     restart: unless-stopped
+    networks:
+      - twinai-net
+
+  chroma-db:
+    image: ghcr.io/chroma-core/chroma:latest
+    container_name: chroma-db
+    ports:
+      - "8001:8000"
+    volumes:
+      - index_data:/chroma/.chroma/index
+    networks:
+      - twinai-net
+
+volumes:
+  index_data:
+    driver: local
+
+networks:
+  twinai-net:
+    driver: bridge

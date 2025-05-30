@@ -22,10 +22,11 @@ def search_sqlite_documents(query: str, top_k=3):
 # ChromaDB에서 임베딩 유사도 기반 검색 (simple_embed 사용)
 def search_chroma_documents(query: str, top_k=3):
     client = chroma_tool.get_chroma()
-    col = client.get_or_create_collection(chroma_tool.COLLECTION_NAME)
-    embedding = chroma_tool.simple_embed(query)
-    # ChromaDB의 query API 사용 (임베딩 기반)
-    results = col.query(query_embeddings=[embedding], n_results=top_k)
+    col = client.get_or_create_collection(
+        chroma_tool.COLLECTION_NAME,
+        embedding_function=chroma_tool.get_korean_embedding_function(),
+    )
+    results = col.query(query_texts=[query], n_results=top_k)
     docs = (
         list(zip(results["ids"][0], results["documents"][0])) if results["ids"] else []
     )
