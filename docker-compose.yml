@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: twin-ai-api
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    command: uvicorn src.server.api_server:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+
+  slackbot:
+    build:
+      context: .
+      dockerfile: Dockerfile.slackbot
+    container_name: twin-ai-slackbot
+    environment:
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_APP_TOKEN=${SLACK_APP_TOKEN}
+      - API_SERVER_URL=http://api:8000/ask
+    command: python src/slackbot/bot.py
+    depends_on:
+      - api
+    restart: unless-stopped
