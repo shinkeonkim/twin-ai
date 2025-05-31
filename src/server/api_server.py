@@ -132,7 +132,10 @@ def edit_doc(doc_id: int, title: str = Form(...), content: str = Form(...)):
 @app.get("/docs/{doc_id}/delete")
 def delete_doc(doc_id: int):
     # chroma에서도 삭제
-    chroma_tool.delete_document_from_chroma(doc_id)
+    try:
+        chroma_tool.delete_document_from_chroma(doc_id)
+    except Exception as e:
+        print(f"Chroma에서 문서 삭제 실패: {e}")
     conn = schema.get_connection()
     cur = conn.cursor()
     cur.execute("DELETE FROM documents WHERE id=?", (doc_id,))

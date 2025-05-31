@@ -1,8 +1,8 @@
 import os
 
 import google.generativeai as genai
-import openai
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
 
@@ -17,6 +17,8 @@ def get_openai_api_key():
 
 # Gemini API (google-generativeai SDK 사용)
 def call_gemini_api(prompt: str) -> str:
+    print("GEMINI API 호출")
+    print(prompt)
     api_key = get_gemini_api_key()
     try:
         genai.configure(api_key=api_key)
@@ -29,20 +31,13 @@ def call_gemini_api(prompt: str) -> str:
 
 # OpenAI(ChatGPT) API 호출
 def call_openai_api(prompt: str) -> str:
+    print("OPENAI API 호출")
+    print(prompt)
     api_key = get_openai_api_key()
-    openai.api_key = api_key
+    client = OpenAI(api_key=api_key)
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt},
-            ],
-            max_tokens=512,
-            temperature=0.7,
-            timeout=15,
-        )
-        return response.choices[0].message.content.strip()
+        response = client.responses.create(model="gpt-4.1", input=prompt)
+        return response.output_text.strip()
     except Exception as e:
         return f"[OpenAI API 오류] {e}"
 

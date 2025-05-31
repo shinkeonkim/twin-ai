@@ -2,11 +2,8 @@ from .prompt_templates import PERSONA, get_prompt_template
 
 
 def build_prompt(question: str, retrieved_docs=None) -> str:
-    template = get_prompt_template()
-    docs_text = ""
-    if retrieved_docs:
-        docs_text = "\n\n---\n참고 문서:\n" + "\n".join(retrieved_docs)
-    return template.replace("{question}", question + docs_text)
+    template = get_prompt_template(retrieved_docs)
+    return template.replace("{question}", question)
 
 
 def get_persona_info():
