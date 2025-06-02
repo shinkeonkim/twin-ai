@@ -9,7 +9,7 @@ load_dotenv()
 
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN", "dummy-bot-token")
 SLACK_APP_TOKEN = os.environ.get("SLACK_APP_TOKEN", "dummy-app-token")
-API_SERVER_URL = os.environ.get("API_SERVER_URL", "http://localhost:8000/ask")
+API_SERVER_URL = os.environ.get("API_SERVER_URL", "http://localhost:8080/ask")
 
 app = App(token=SLACK_BOT_TOKEN)
 

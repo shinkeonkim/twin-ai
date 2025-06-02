@@ -4,4 +4,4 @@ RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificat
 RUN pip install --upgrade pip && pip install poetry
 COPY . .
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
-CMD ["uvicorn", "src.server.api_server:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "src.server.api_server:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
