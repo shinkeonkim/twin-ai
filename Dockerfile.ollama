@@ -1,0 +1,28 @@
+FROM ollama/ollama:latest as base
+
+# curl, lsof 설치
+RUN apt-get update && apt-get install -y curl lsof
+
+FROM base as builder
+
+# Poetry 설치
+RUN curl -sSL https://install.python-poetry.org | python3 -
+    ENV PATH="/root/.local/bin:$PATH"
+
+WORKDIR /app
+
+ENV OLLAMA_HOST=0.0.0.0:11435
+
+COPY scripts/init-ollama.sh /init-ollama.sh
+RUN chmod +x /init-ollama.sh
+
+RUN /init-ollama.sh
+
+FROM base as runner
+
+ENV OLLAMA_HOST=0.0.0.0:11435
+
+COPY scripts/run-ollama.sh /run-ollama.sh
+RUN chmod +x /run-ollama.sh
+
+ENTRYPOINT ["/run-ollama.sh"]

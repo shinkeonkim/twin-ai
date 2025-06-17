@@ -1,7 +1,27 @@
-FROM python:3.12-slim
+FROM python:3.12-slim as base
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+RUN apt-get update -qq && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    git \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+FROM base as builder
+
+# Poetry 설치
+RUN curl -sSL https://install.python-poetry.org | python3 -
+    ENV PATH="/root/.local/bin:$PATH"
+
 WORKDIR /app
-RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates
-RUN pip install --upgrade pip && pip install poetry
-COPY . .
+
+COPY slackbot/ .
+COPY poetry.lock .
+COPY pyproject.toml .
+
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
-CMD ["python", "src/slackbot/bot.py"]
+CMD ["python", "bot.py"]

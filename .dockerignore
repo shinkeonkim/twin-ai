@@ -8,3 +8,5 @@ venv/
 .gitignore
 chroma_data/
 twinai.db
+
+llm/*

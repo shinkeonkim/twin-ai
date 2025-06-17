@@ -1,19 +1,42 @@
-# syntax=docker/dockerfile:1
-FROM python:3.12-slim AS base
+# Dockerfile
+FROM python:3.12-slim as base
 
-WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+RUN apt-get update -qq && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    git \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Git configuration
+RUN git config --global url."https://".insteadOf git:// && \
+    git config --global url."https://".insteadOf ssh://git@
+
+FROM base as builder
 
 # Poetry 설치
-RUN pip install --upgrade pip && pip install poetry
+RUN curl -sSL https://install.python-poetry.org | python3 -
+    ENV PATH="/root/.local/bin:$PATH"
 
-# 프로젝트 전체 복사
-COPY . .
+RUN mkdir -p /app/twin_ai_webapp
 
-# Poetry install (모든 파일이 복사된 후)
-RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
+WORKDIR /app/twin_ai_webapp
 
-# API 서버 실행
-CMD ["uvicorn", "src.server.api_server:app", "--host", "0.0.0.0", "--port", "8080"]
+# Poetry 파일 복사 및 의존성 설치
+COPY pyproject.toml poetry.lock ./
+RUN poetry config virtualenvs.create false && poetry install --no-root
 
-# Slack Bot 실행 예시 (빌드 후)
-# docker run --env-file .env twin-ai python src/slackbot/bot.py
+# 애플리케이션 코드 복사
+COPY . /app/twin_ai_webapp
+
+# entrypoint 스크립트 복사 및 권한 부여
+COPY scripts/start-webapp.sh /start-webapp.sh
+RUN chmod +x /start-webapp.sh
+
+EXPOSE 8080
+
+ENTRYPOINT ["/start-webapp.sh"]

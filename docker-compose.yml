@@ -3,19 +3,23 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile.api
+      dockerfile: Dockerfile
     container_name: twin-ai-api
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
       - PORT=8080
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-    command: uvicorn src.server.api_server:app --host 0.0.0.0 --port 8080 --reload
-    restart: unless-stopped
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
+      - OLLAMA_EMBED_MODEL=${OLLAMA_EMBED_MODEL}
+      - OLLAMA_INSTRUCT_MODEL=${OLLAMA_INSTRUCT_MODEL}
     volumes:
-      - ./src:/app/src
-      - ./tests:/app/tests
+      - ./twin_ai_webapp:/app/twin_ai_webapp
+      - ./poetry.lock:/app/twin_ai_webapp/poetry.lock
+      - ./pyproject.toml:/app/twin_ai_webapp/pyproject.toml
+    entrypoint:
+      - /start-webapp.sh
     depends_on:
       - chroma-db
     networks:
@@ -29,8 +33,7 @@ services:
     environment:
       - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
       - SLACK_APP_TOKEN=${SLACK_APP_TOKEN}
-      - API_SERVER_URL=http://api:8080/ask
-    command: python src/slackbot/bot.py
+    command: python bot.py
     depends_on:
       - api
     restart: unless-stopped
@@ -47,9 +50,32 @@ services:
     networks:
       - twinai-net
 
+  # ollama:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.ollama
+  #   container_name: ollama
+  #   ports:
+  #     - "11435:11435"
+  #   environment:
+  #     - OLLAMA_HOST=0.0.0.0:11435
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   networks:
+  #     - twinai-net
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:11435"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #     start_period: 120s
+
 volumes:
   index_data:
     driver: local
+  # ollama_data:
+  #   driver: local
 
 networks:
   twinai-net:
