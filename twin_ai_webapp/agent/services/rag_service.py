@@ -1,7 +1,7 @@
 import logging
 
 from agent.utils.chroma_tool import search_chroma
-from agent.utils.prompt_engineering import build_prompt
+from agent.utils.prompt_templates import get_prompt_template
 from django.conf import settings
 from langchain_community.llms import Ollama
 
@@ -22,28 +22,6 @@ class RAGService:
 
     def search(self, query, top_k=3):
         return search_chroma(query, top_k=top_k)
-
-    # def ask(self, question, top_k=3):
-    #     retrieved_docs = self.search(question, top_k=top_k)
-    #     print(retrieved_docs)
-    #     prompt = build_prompt(question, retrieved_docs)
-    #     logger.info(f"Prompt: {prompt}")
-    #     answer = self.llm.invoke(
-    #         prompt,
-    #         temperature=0.3,
-    #         max_tokens=1000,
-    #         top_p=0.9,
-    #         frequency_penalty=0.0,
-    #         presence_penalty=0.0,
-    #         stop=None,
-    #         stream=False,
-    #         logprobs=None,
-    #     )
-    #     return {
-    #         'answer': answer,
-    #         'prompt': prompt,
-    #         'retrieved_docs': retrieved_docs,
-    # }
 
     def iterative_search(self, user_question, max_iter=1, top_k=3):
         """
@@ -76,23 +54,33 @@ class RAGService:
             retrieved_docs.extend([d for d in docs if d not in retrieved_docs])
         return retrieved_docs
 
-    def ask(self, user_question):
+    def ask(self, user_question, chat_history=None):
         """
         iterative_search로 누적된 자료를 바탕으로 최종 답변을 생성
+        
+        Args:
+            user_question (str): 사용자 질문
+            chat_history (list): LangChain message 형식의 대화 기록 리스트
         """
+        chat_history = chat_history or []
         retrieved_docs = self.search(user_question)
-
-        prompt = build_prompt(user_question, retrieved_docs)
-
-        logger.info(f"Iterative Prompt: {prompt}")
-        answer = self.llm.invoke(
-            prompt,
-            temperature=0.4,
-            top_p=0.9,
-            stop=None,
+        
+        # Create prompt template with retrieved documents
+        chat_prompt = get_prompt_template(retrieved_docs)
+        
+        # Format the prompt with question and chat history
+        messages = chat_prompt.format_messages(
+            question=user_question,
+            chat_history=chat_history
         )
+        
+        logger.info(f"Formatted Messages: {messages}")
+        
+        # Get response from LLM
+        response = self.llm.invoke(messages)
+        
         return {
-            "answer": answer,
-            "prompt": prompt,
+            "answer": response,
+            "prompt": str(messages),
             "retrieved_docs": retrieved_docs,
         }

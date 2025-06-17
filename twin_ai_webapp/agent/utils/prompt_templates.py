@@ -1,23 +1,27 @@
 # Twin AI Prompt Templates
-BASIC_PROMPT_TEMPLATE = """{{question}}
 
-{document_template}
-""".strip()
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-DOCUMENT_TEMPLATE = """
-참고 내용:
-아래 내용은 사용자의 질문과 관련된 참고 내용입니다. 사용자의 질문에 대한 답변을 작성할 때 참고하세요.
-{docs}
-"""
-
+def escape_braces(text):
+    return text.replace('{', '{{').replace('}', '}}')
 
 def get_prompt_template(retrieved_docs=[]):
-    return BASIC_PROMPT_TEMPLATE.format(
-        document_template=get_document_template(retrieved_docs),
-    )
+    document_message = ""
 
-
-def get_document_template(retrieved_docs=[]):
     if retrieved_docs:
-        return DOCUMENT_TEMPLATE.format(docs="\n".join(retrieved_docs))
-    return ""
+        # 슬랙 메시지 등 외부 입력에 포함된 중괄호 이스케이프 처리
+        safe_docs = [escape_braces(doc) for doc in retrieved_docs]
+        retrieved_docs_str = "\n".join(safe_docs)
+        document_message = f"""
+        아래 내용은 사용자 질문을 김신건에 대한 정보를 저장한 문서에서 검색한 참고 내용입니다. 
+        메세지를 작성할 때 참고하세요.
+        {retrieved_docs_str}
+        """
+
+    chat_prompt = ChatPromptTemplate.from_messages([
+        ("system", document_message),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{question}"),
+    ])
+    
+    return chat_prompt
